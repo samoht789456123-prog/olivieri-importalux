@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mon CA — OLIVIERI · Importalux</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Segoe UI',system-ui,Arial,sans-serif;background:#EDF1F7;
+  color:#1a2a3a;font-size:14px;-webkit-font-smoothing:antialiased}
+
+/* ── HEADER ── */
+.hdr{background:linear-gradient(135deg,#0F1F2E 0%,#1a5276 60%,#117A65 100%);
+  color:#fff;padding:20px 20px 16px}
+.hdr-top{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.avatar{width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,.18);
+  display:flex;align-items:center;justify-content:center;font-size:20px;
+  font-weight:800;flex-shrink:0;border:2px solid rgba(255,255,255,.3)}
+.hdr-name{font-size:22px;font-weight:800;letter-spacing:.3px}
+.hdr-sub{font-size:12px;opacity:.75;margin-top:3px}
+.update-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:5px 12px;
+  font-size:11px;white-space:nowrap}
+.update-dot{width:7px;height:7px;border-radius:50%;background:#2ECC71;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── SAISONS TABS ── */
+.season-bar{display:flex;gap:0;background:rgba(0,0,0,.2);border-radius:8px;
+  padding:3px;margin-top:10px;width:fit-content}
+.season-tab{padding:5px 14px;border-radius:6px;font-size:11px;font-weight:700;
+  cursor:default;opacity:.55;letter-spacing:.3px;text-transform:uppercase}
+.season-tab.active{background:rgba(255,255,255,.2);opacity:1}
+
+/* ── KPI GRID ── */
+.main{max-width:1200px;margin:0 auto;padding:16px 14px}
+.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+@media(max-width:540px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+.kc{background:#fff;border-radius:14px;padding:14px 16px;
+  box-shadow:0 2px 12px rgba(0,0,0,.08);border-top:4px solid #2E75B6;
+  position:relative;overflow:hidden}
+.kc::after{content:'';position:absolute;right:-10px;top:-10px;
+  width:60px;height:60px;border-radius:50%;background:currentColor;opacity:.04}
+.kc-icon{position:absolute;right:12px;top:12px;font-size:22px;opacity:.12}
+.kc-lbl{font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.8px;color:#7F8C8D;margin-bottom:6px}
+.kc-amt{font-size:18px;font-weight:800;letter-spacing:-.3px;line-height:1.1}
+.kc-sub{font-size:11px;color:#999;margin-top:4px}
+.kc-evol{font-size:13px;font-weight:700;margin-top:6px}
+
+/* ── SECTIONS ── */
+.section-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1.4px;
+  color:#6B7E99;margin:16px 0 10px;display:flex;align-items:center;gap:8px}
+.section-lbl::after{content:'';flex:1;height:1px;background:#D5DFE8}
+.card{background:#fff;border-radius:14px;padding:18px;
+  box-shadow:0 2px 12px rgba(0,0,0,.07);margin-bottom:14px}
+
+/* ── TABLEAU ── */
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{background:#1a2a3a;color:#fff;padding:5px 7px;text-align:right;
+  font-size:10px;font-weight:700;white-space:nowrap}
+th.th-left{text-align:left}
+th.th-sort{cursor:pointer;user-select:none}
+th.th-sort:hover{background:#2E4A6A}
+th.th-sort .si{font-size:9px;opacity:.4;margin-left:3px}
+th.th-sort.asc .si::after{content:'▲';opacity:1;color:#7EC8F8}
+th.th-sort.desc .si::after{content:'▼';opacity:1;color:#7EC8F8}
+th.th-sort.asc .si, th.th-sort.desc .si{opacity:1}
+td{padding:5px 7px;border-bottom:1px solid #EAF0F7;text-align:right;vertical-align:middle}
+td.td-code{font-family:monospace;font-size:10.5px;text-align:left;color:#6B7E99}
+td.td-name{text-align:left;font-weight:600;max-width:120px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+td.td-ville{text-align:left;max-width:90px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;color:#444}
+td.td-proj{font-weight:800;background:#FFFBF0}
+tr:nth-child(even) td{background:#F8FBFF}
+tr:hover td{background:#EDF4FF!important}
+tr.tf td{background:#1a2a3a;color:#fff;font-weight:700;border:none}
+
+/* ── BARRES ── */
+.pbar-wrap{display:inline-block;width:55px;background:#EAF0F7;
+  border-radius:3px;height:6px;vertical-align:middle;margin-right:5px}
+.pbar-fill{height:6px;border-radius:3px;transition:width .3s}
+.pbar-pct{font-size:11px;color:#888}
+
+/* ── FOOTER ── */
+.footer{text-align:center;color:#B0B8C4;font-size:11px;padding:16px;
+  border-top:1px solid #DDE4ED;margin-top:4px}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-top">
+    <div class="avatar">OL</div>
+    <div style="flex:1">
+      <div class="hdr-name">OLIVIERI</div>
+      <div class="hdr-sub">Mon tableau de bord commercial · Importalux</div>
+    </div>
+    <div class="update-badge">
+      <span class="update-dot"></span>
+      Mis à jour<br>25/06/2026 à 14:53
+    </div>
+  </div>
+  <div class="season-bar">
+    <div class="season-tab active">Saison 2025/2026</div>
+    <div class="season-tab">vs Saison 2024/2025</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- KPI -->
+  <div class="section-lbl">Vue d'ensemble — Saison 2025/2026</div>
+  <div class="kpi-grid">
+
+    <div class="kc" style="border-color:#117A65;
+      background:linear-gradient(135deg,#0F1F2E,#117A65);color:#fff">
+      <span class="kc-icon">✅</span>
+      <div class="kc-lbl" style="color:rgba(255,255,255,.7)">CA Facturé N</div>
+      <div class="kc-amt">380 426 €</div>
+      <div class="kc-sub" style="color:rgba(255,255,255,.6)">47 clients · 122 factures</div>
+    </div>
+
+    <div class="kc" style="border-color:#E67E22">
+      <span class="kc-icon">📋</span>
+      <div class="kc-lbl" style="color:#E67E22">BDC en cours</div>
+      <div class="kc-amt" style="color:#E67E22">0 €</div>
+      <div class="kc-sub">0 clients · 0 commandes</div>
+    </div>
+
+    <div class="kc" style="border-color:#9B59B6">
+      <span class="kc-icon">🎯</span>
+      <div class="kc-lbl" style="color:#9B59B6">CA Projeté N</div>
+      <div class="kc-amt" style="color:#9B59B6">380 426 €</div>
+      <div class="kc-sub">Facturé + BDC</div>
+    </div>
+
+    <div class="kc" style="border-color:#95A5A6">
+      <span class="kc-icon">📉</span>
+      <div class="kc-lbl">CA Saison 2024/2025</div>
+      <div class="kc-amt" style="color:#555">448 058 €</div>
+      <div class="kc-sub">Saison précédente</div>
+    </div>
+
+    <div class="kc" style="border-color:#C0392B;grid-column:span 2">
+      <span class="kc-icon">📊</span>
+      <div class="kc-lbl">Évolution projetée</div>
+      <div class="kc-amt" style="color:#C0392B">
+        ▼ 15.1 %
+      </div>
+      <div class="kc-sub">Projeté Saison 2025/2026 vs Facturé Saison 2024/2025</div>
+    </div>
+
+  </div>
+
+  <!-- GRAPHIQUE -->
+  <div class="section-lbl">CA mensuel</div>
+  <div class="card">
+    <canvas id="chartMensuel" height="120"></canvas>
+  </div>
+
+  <!-- TABLEAU CLIENTS -->
+  <div class="section-lbl">Mes clients</div>
+  <div class="card">
+    <div style="margin-bottom:10px;font-size:11px;color:#888">
+      Cliquez sur un en-tête de colonne pour trier &nbsp;·&nbsp;
+      <span style="color:#E67E22">■</span> BDC = commandes en cours non encore facturées
+    </div>
+    <div class="tbl-wrap">
+    <table id="tblClients">
+      <thead><tr>
+        <th class="th-left th-sort" onclick="sortTable('tblClients',0,'str',this)">Code <span class="si">⇅</span></th>
+        <th class="th-left th-sort" onclick="sortTable('tblClients',1,'str',this)">Client <span class="si">⇅</span></th>
+        <th class="th-sort" onclick="sortTable('tblClients',2,'str',this)">Dpt <span class="si">⇅</span></th>
+        <th class="th-left th-sort" onclick="sortTable('tblClients',3,'str',this)">Ville <span class="si">⇅</span></th>
+        <th class="th-sort" onclick="sortTable('tblClients',4,'num',this)">CA Facturé N <span class="si">⇅</span></th>
+        <th class="th-sort" style="color:#E67E22" onclick="sortTable('tblClients',5,'num',this)">BDC en cours <span class="si">⇅</span></th>
+        <th class="th-sort" style="background:#E67E2233" onclick="sortTable('tblClients',6,'num',this)">CA Projeté N <span class="si">⇅</span></th>
+        <th class="th-sort" onclick="sortTable('tblClients',7,'num',this)">Saison 2024/2025 <span class="si">⇅</span></th>
+        <th class="th-sort" onclick="sortTable('tblClients',8,'num',this)">Évolution <span class="si">⇅</span></th>
+        <th class="th-left th-sort" onclick="sortTable('tblClients',9,'num',this)">Part <span class="si">⇅</span></th>
+      </tr></thead>
+      <tbody><tr><td data-val="3321" class="td-code">3321</td><td data-val="TILO AEROPORT" class="td-name">TILO AEROPORT</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Le Lamentin" class="td-ville">Le Lamentin</td><td data-val="50570.95">50 571 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="50570.95" style="color:#bbb;font-size:11px">—</td><td data-val="71306.27" style="color:#888">71 306 €</td><td data-val="-29.08" style="color:#C0392B;font-weight:700">▼ 29.1 %</td><td data-val="13.29"><div class="pbar-wrap"><div class="pbar-fill" style="width:13.3%;background:#117A65"></div></div><span class="pbar-pct">13.3%</span></td></tr>
+<tr><td data-val="2502" class="td-code">2502</td><td data-val="TILO MARTINIQUE/ROBERT" class="td-name">TILO MARTINIQUE/ROBERT</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Le Lamentin" class="td-ville">Le Lamentin</td><td data-val="38906.880000000005">38 907 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="38906.880000000005" style="color:#bbb;font-size:11px">—</td><td data-val="31270.800000000003" style="color:#888">31 271 €</td><td data-val="24.42" style="color:#27AE60;font-weight:700">▲ 24.4 %</td><td data-val="10.23"><div class="pbar-wrap"><div class="pbar-fill" style="width:10.2%;background:#117A65"></div></div><span class="pbar-pct">10.2%</span></td></tr>
+<tr><td data-val="2898" class="td-code">2898</td><td data-val="TILO" class="td-name">TILO</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Fort De France" class="td-ville">Fort De France</td><td data-val="38605.899999999994">38 606 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="38605.899999999994" style="color:#bbb;font-size:11px">—</td><td data-val="49799.97" style="color:#888">49 800 €</td><td data-val="-22.48" style="color:#C0392B;font-weight:700">▼ 22.5 %</td><td data-val="10.15"><div class="pbar-wrap"><div class="pbar-fill" style="width:10.1%;background:#117A65"></div></div><span class="pbar-pct">10.1%</span></td></tr>
+<tr><td data-val="3896" class="td-code">3896</td><td data-val="SEA EXPLORER" class="td-name">SEA EXPLORER</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Fort De France" class="td-ville">Fort De France</td><td data-val="26724.47">26 724 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="26724.47" style="color:#bbb;font-size:11px">—</td><td data-val="14828.57" style="color:#888">14 829 €</td><td data-val="80.22" style="color:#27AE60;font-weight:700">▲ 80.2 %</td><td data-val="7.02"><div class="pbar-wrap"><div class="pbar-fill" style="width:7.0%;background:#117A65"></div></div><span class="pbar-pct">7.0%</span></td></tr>
+<tr><td data-val="3315" class="td-code">3315</td><td data-val="CERCLE DE LA BASE DE DEFENSE" class="td-name">CERCLE DE LA BASE DE DEFENSE</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Fort De France" class="td-ville">Fort De France</td><td data-val="17491.03">17 491 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="17491.03" style="color:#bbb;font-size:11px">—</td><td data-val="18345.559999999998" style="color:#888">18 346 €</td><td data-val="-4.66" style="color:#C0392B;font-weight:700">▼ 4.7 %</td><td data-val="4.60"><div class="pbar-wrap"><div class="pbar-fill" style="width:4.6%;background:#117A65"></div></div><span class="pbar-pct">4.6%</span></td></tr>
+<tr><td data-val="1144" class="td-code">1144</td><td data-val="DOUCEURS PEYI" class="td-name">DOUCEURS PEYI</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Les 3 Ilets" class="td-ville">Les 3 Ilets</td><td data-val="14476.41">14 476 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="14476.41" style="color:#bbb;font-size:11px">—</td><td data-val="15283.380000000001" style="color:#888">15 283 €</td><td data-val="-5.28" style="color:#C0392B;font-weight:700">▼ 5.3 %</td><td data-val="3.81"><div class="pbar-wrap"><div class="pbar-fill" style="width:3.8%;background:#117A65"></div></div><span class="pbar-pct">3.8%</span></td></tr>
+<tr><td data-val="2523" class="td-code">2523</td><td data-val="CARAIBES CREATIONS" class="td-name">CARAIBES CREATIONS</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Le Diamant" class="td-ville">Le Diamant</td><td data-val="14295.11">14 295 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="14295.11" style="color:#bbb;font-size:11px">—</td><td data-val="15809.94" style="color:#888">15 810 €</td><td data-val="-9.58" style="color:#C0392B;font-weight:700">▼ 9.6 %</td><td data-val="3.76"><div class="pbar-wrap"><div class="pbar-fill" style="width:3.8%;background:#117A65"></div></div><span class="pbar-pct">3.8%</span></td></tr>
+<tr><td data-val="3648" class="td-code">3648</td><td data-val="TABAC DES CARAIBES" class="td-name">TABAC DES CARAIBES</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Sainte Luce" class="td-ville">Sainte Luce</td><td data-val="13142.48">13 142 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="13142.48" style="color:#bbb;font-size:11px">—</td><td data-val="6657.299999999999" style="color:#888">6 657 €</td><td data-val="97.41" style="color:#27AE60;font-weight:700">▲ 97.4 %</td><td data-val="3.45"><div class="pbar-wrap"><div class="pbar-fill" style="width:3.5%;background:#117A65"></div></div><span class="pbar-pct">3.5%</span></td></tr>
+<tr><td data-val="3030" class="td-code">3030</td><td data-val="MME VALENTIN JULIENNE" class="td-name">MME VALENTIN JULIENNE</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Le Francois" class="td-ville">Le Francois</td><td data-val="12246.980000000001">12 247 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="12246.980000000001" style="color:#bbb;font-size:11px">—</td><td data-val="10545.289999999999" style="color:#888">10 545 €</td><td data-val="16.14" style="color:#27AE60;font-weight:700">▲ 16.1 %</td><td data-val="3.22"><div class="pbar-wrap"><div class="pbar-fill" style="width:3.2%;background:#117A65"></div></div><span class="pbar-pct">3.2%</span></td></tr>
+<tr><td data-val="4399" class="td-code">4399</td><td data-val="EURL L'OASIS BOUTIQUE" class="td-name">EURL L'OASIS BOUTIQUE</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Anses D'Arlets" class="td-ville">Anses D'Arlets</td><td data-val="10496.3">10 496 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="10496.3" style="color:#bbb;font-size:11px">—</td><td data-val="16390.92" style="color:#888">16 391 €</td><td data-val="-35.96" style="color:#C0392B;font-weight:700">▼ 36.0 %</td><td data-val="2.76"><div class="pbar-wrap"><div class="pbar-fill" style="width:2.8%;background:#117A65"></div></div><span class="pbar-pct">2.8%</span></td></tr>
+<tr><td data-val="4423" class="td-code">4423</td><td data-val="LULU" class="td-name">LULU</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Fort De France" class="td-ville">Fort De France</td><td data-val="10445.58">10 446 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="10445.58" style="color:#bbb;font-size:11px">—</td><td data-val="21294.22" style="color:#888">21 294 €</td><td data-val="-50.95" style="color:#C0392B;font-weight:700">▼ 50.9 %</td><td data-val="2.75"><div class="pbar-wrap"><div class="pbar-fill" style="width:2.7%;background:#117A65"></div></div><span class="pbar-pct">2.7%</span></td></tr>
+<tr><td data-val="4810" class="td-code">4810</td><td data-val="MALOA" class="td-name">MALOA</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Le Diamant" class="td-ville">Le Diamant</td><td data-val="9325.91">9 326 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="9325.91" style="color:#bbb;font-size:11px">—</td><td data-val="0.0" style="color:#888"><span style=color:#ccc>—</span></td><td data-val="9999.00" style="color:#aaa;font-weight:700">—</td><td data-val="2.45"><div class="pbar-wrap"><div class="pbar-fill" style="width:2.5%;background:#117A65"></div></div><span class="pbar-pct">2.5%</span></td></tr>
+<tr><td data-val="5006" class="td-code">5006</td><td data-val="HOTEL BAMBOU BUNGALOW SHOP" class="td-name">HOTEL BAMBOU BUNGALOW SHOP</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Les 3 Ilets" class="td-ville">Les 3 Ilets</td><td data-val="8542.78">8 543 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="8542.78" style="color:#bbb;font-size:11px">—</td><td data-val="6923.04" style="color:#888">6 923 €</td><td data-val="23.40" style="color:#27AE60;font-weight:700">▲ 23.4 %</td><td data-val="2.25"><div class="pbar-wrap"><div class="pbar-fill" style="width:2.2%;background:#117A65"></div></div><span class="pbar-pct">2.2%</span></td></tr>
+<tr><td data-val="2896" class="td-code">2896</td><td data-val="COLIBRI" class="td-name">COLIBRI</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Pointe Du Bout" class="td-ville">Pointe Du Bout</td><td data-val="8436.6">8 437 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="8436.6" style="color:#bbb;font-size:11px">—</td><td data-val="17232.06" style="color:#888">17 232 €</td><td data-val="-51.04" style="color:#C0392B;font-weight:700">▼ 51.0 %</td><td data-val="2.22"><div class="pbar-wrap"><div class="pbar-fill" style="width:2.2%;background:#117A65"></div></div><span class="pbar-pct">2.2%</span></td></tr>
+<tr><td data-val="3461" class="td-code">3461</td><td data-val="KAY ZAZA" class="td-name">KAY ZAZA</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Anses D'Arlets" class="td-ville">Anses D'Arlets</td><td data-val="7936.33">7 936 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="7936.33" style="color:#bbb;font-size:11px">—</td><td data-val="9369.27" style="color:#888">9 369 €</td><td data-val="-15.29" style="color:#C0392B;font-weight:700">▼ 15.3 %</td><td data-val="2.09"><div class="pbar-wrap"><div class="pbar-fill" style="width:2.1%;background:#117A65"></div></div><span class="pbar-pct">2.1%</span></td></tr>
+<tr><td data-val="3382" class="td-code">3382</td><td data-val="AW MATINIK" class="td-name">AW MATINIK</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Fort De France" class="td-ville">Fort De France</td><td data-val="7883.030000000001">7 883 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="7883.030000000001" style="color:#bbb;font-size:11px">—</td><td data-val="10234.29" style="color:#888">10 234 €</td><td data-val="-22.97" style="color:#C0392B;font-weight:700">▼ 23.0 %</td><td data-val="2.07"><div class="pbar-wrap"><div class="pbar-fill" style="width:2.1%;background:#117A65"></div></div><span class="pbar-pct">2.1%</span></td></tr>
+<tr><td data-val="3547" class="td-code">3547</td><td data-val="BLU COCO - SARL NEW LIFE" class="td-name">BLU COCO - SARL NEW LIFE</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Les 3 Ilets" class="td-ville">Les 3 Ilets</td><td data-val="7645.83">7 646 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="7645.83" style="color:#bbb;font-size:11px">—</td><td data-val="6548.9800000000005" style="color:#888">6 549 €</td><td data-val="16.75" style="color:#27AE60;font-weight:700">▲ 16.7 %</td><td data-val="2.01"><div class="pbar-wrap"><div class="pbar-fill" style="width:2.0%;background:#117A65"></div></div><span class="pbar-pct">2.0%</span></td></tr>
+<tr><td data-val="2775" class="td-code">2775</td><td data-val="ATOLL" class="td-name">ATOLL</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Saint Pierre" class="td-ville">Saint Pierre</td><td data-val="7425.2300000000005">7 425 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="7425.2300000000005" style="color:#bbb;font-size:11px">—</td><td data-val="6740.79" style="color:#888">6 741 €</td><td data-val="10.15" style="color:#27AE60;font-weight:700">▲ 10.2 %</td><td data-val="1.95"><div class="pbar-wrap"><div class="pbar-fill" style="width:2.0%;background:#117A65"></div></div><span class="pbar-pct">2.0%</span></td></tr>
+<tr><td data-val="3453" class="td-code">3453</td><td data-val="TOA BOUTIQUE" class="td-name">TOA BOUTIQUE</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Les 3 Ilets" class="td-ville">Les 3 Ilets</td><td data-val="6767.6900000000005">6 768 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="6767.6900000000005" style="color:#bbb;font-size:11px">—</td><td data-val="10037.9" style="color:#888">10 038 €</td><td data-val="-32.58" style="color:#C0392B;font-weight:700">▼ 32.6 %</td><td data-val="1.78"><div class="pbar-wrap"><div class="pbar-fill" style="width:1.8%;background:#117A65"></div></div><span class="pbar-pct">1.8%</span></td></tr>
+<tr><td data-val="3466" class="td-code">3466</td><td data-val="FOLIE DES ISLES" class="td-name">FOLIE DES ISLES</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Pointe Du Bout" class="td-ville">Pointe Du Bout</td><td data-val="6258.99">6 259 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="6258.99" style="color:#bbb;font-size:11px">—</td><td data-val="4980.28" style="color:#888">4 980 €</td><td data-val="25.68" style="color:#27AE60;font-weight:700">▲ 25.7 %</td><td data-val="1.65"><div class="pbar-wrap"><div class="pbar-fill" style="width:1.6%;background:#117A65"></div></div><span class="pbar-pct">1.6%</span></td></tr>
+<tr><td data-val="5068" class="td-code">5068</td><td data-val="KARIBELLA" class="td-name">KARIBELLA</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Sainte Anne" class="td-ville">Sainte Anne</td><td data-val="5445.29">5 445 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="5445.29" style="color:#bbb;font-size:11px">—</td><td data-val="0.0" style="color:#888"><span style=color:#ccc>—</span></td><td data-val="9999.00" style="color:#aaa;font-weight:700">—</td><td data-val="1.43"><div class="pbar-wrap"><div class="pbar-fill" style="width:1.4%;background:#117A65"></div></div><span class="pbar-pct">1.4%</span></td></tr>
+<tr><td data-val="5020" class="td-code">5020</td><td data-val="LA MALLE AUX TRESORS" class="td-name">LA MALLE AUX TRESORS</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Les 3 Ilets" class="td-ville">Les 3 Ilets</td><td data-val="5372.66">5 373 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="5372.66" style="color:#bbb;font-size:11px">—</td><td data-val="3275.24" style="color:#888">3 275 €</td><td data-val="64.04" style="color:#27AE60;font-weight:700">▲ 64.0 %</td><td data-val="1.41"><div class="pbar-wrap"><div class="pbar-fill" style="width:1.4%;background:#117A65"></div></div><span class="pbar-pct">1.4%</span></td></tr>
+<tr><td data-val="3055" class="td-code">3055</td><td data-val="BEL KREOL" class="td-name">BEL KREOL</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Le Francois" class="td-ville">Le Francois</td><td data-val="5326.0">5 326 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="5326.0" style="color:#bbb;font-size:11px">—</td><td data-val="10817.880000000001" style="color:#888">10 818 €</td><td data-val="-50.77" style="color:#C0392B;font-weight:700">▼ 50.8 %</td><td data-val="1.40"><div class="pbar-wrap"><div class="pbar-fill" style="width:1.4%;background:#117A65"></div></div><span class="pbar-pct">1.4%</span></td></tr>
+<tr><td data-val="3450" class="td-code">3450</td><td data-val="WAKANDA ET SA TRIBU SACREE" class="td-name">WAKANDA ET SA TRIBU SACREE</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Le Diamant" class="td-ville">Le Diamant</td><td data-val="4806.2">4 806 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="4806.2" style="color:#bbb;font-size:11px">—</td><td data-val="4810.33" style="color:#888">4 810 €</td><td data-val="-0.09" style="color:#C0392B;font-weight:700">▼ 0.1 %</td><td data-val="1.26"><div class="pbar-wrap"><div class="pbar-fill" style="width:1.3%;background:#117A65"></div></div><span class="pbar-pct">1.3%</span></td></tr>
+<tr><td data-val="5044" class="td-code">5044</td><td data-val="LA CARAMBOLE" class="td-name">LA CARAMBOLE</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Sainte Luce" class="td-ville">Sainte Luce</td><td data-val="4036.66">4 037 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="4036.66" style="color:#bbb;font-size:11px">—</td><td data-val="2037.56" style="color:#888">2 038 €</td><td data-val="98.11" style="color:#27AE60;font-weight:700">▲ 98.1 %</td><td data-val="1.06"><div class="pbar-wrap"><div class="pbar-fill" style="width:1.1%;background:#117A65"></div></div><span class="pbar-pct">1.1%</span></td></tr>
+<tr><td data-val="3459" class="td-code">3459</td><td data-val="MELLE SILENCIEUX MONIQUE" class="td-name">MELLE SILENCIEUX MONIQUE</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Fort De France" class="td-ville">Fort De France</td><td data-val="3939.83">3 940 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="3939.83" style="color:#bbb;font-size:11px">—</td><td data-val="1239.4" style="color:#888">1 239 €</td><td data-val="217.88" style="color:#27AE60;font-weight:700">▲ 217.9 %</td><td data-val="1.04"><div class="pbar-wrap"><div class="pbar-fill" style="width:1.0%;background:#117A65"></div></div><span class="pbar-pct">1.0%</span></td></tr>
+<tr><td data-val="3388" class="td-code">3388</td><td data-val="MAISON DU COCO" class="td-name">MAISON DU COCO</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Sainte Luce" class="td-ville">Sainte Luce</td><td data-val="3792.17">3 792 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="3792.17" style="color:#bbb;font-size:11px">—</td><td data-val="3919.8" style="color:#888">3 920 €</td><td data-val="-3.26" style="color:#C0392B;font-weight:700">▼ 3.3 %</td><td data-val="1.00"><div class="pbar-wrap"><div class="pbar-fill" style="width:1.0%;background:#117A65"></div></div><span class="pbar-pct">1.0%</span></td></tr>
+<tr><td data-val="4422" class="td-code">4422</td><td data-val="IDILE" class="td-name">IDILE</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Fort De France" class="td-ville">Fort De France</td><td data-val="3500.0600000000004">3 500 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="3500.0600000000004" style="color:#bbb;font-size:11px">—</td><td data-val="2845.27" style="color:#888">2 845 €</td><td data-val="23.01" style="color:#27AE60;font-weight:700">▲ 23.0 %</td><td data-val="0.92"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.9%;background:#117A65"></div></div><span class="pbar-pct">0.9%</span></td></tr>
+<tr><td data-val="2012" class="td-code">2012</td><td data-val="SOGATO MARTINIQUE" class="td-name">SOGATO MARTINIQUE</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Fort De France" class="td-ville">Fort De France</td><td data-val="3494.76">3 495 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="3494.76" style="color:#bbb;font-size:11px">—</td><td data-val="6761.8099999999995" style="color:#888">6 762 €</td><td data-val="-48.32" style="color:#C0392B;font-weight:700">▼ 48.3 %</td><td data-val="0.92"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.9%;background:#117A65"></div></div><span class="pbar-pct">0.9%</span></td></tr>
+<tr><td data-val="1249" class="td-code">1249</td><td data-val="JMS CARAIBES" class="td-name">JMS CARAIBES</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Les 3 Ilets" class="td-ville">Les 3 Ilets</td><td data-val="3157.39">3 157 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="3157.39" style="color:#bbb;font-size:11px">—</td><td data-val="6015.4400000000005" style="color:#888">6 015 €</td><td data-val="-47.51" style="color:#C0392B;font-weight:700">▼ 47.5 %</td><td data-val="0.83"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.8%;background:#117A65"></div></div><span class="pbar-pct">0.8%</span></td></tr>
+<tr><td data-val="3273" class="td-code">3273</td><td data-val="BIJOUX DES ILES" class="td-name">BIJOUX DES ILES</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Les 3 Ilets" class="td-ville">Les 3 Ilets</td><td data-val="3155.9">3 156 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="3155.9" style="color:#bbb;font-size:11px">—</td><td data-val="5872.61" style="color:#888">5 873 €</td><td data-val="-46.26" style="color:#C0392B;font-weight:700">▼ 46.3 %</td><td data-val="0.83"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.8%;background:#117A65"></div></div><span class="pbar-pct">0.8%</span></td></tr>
+<tr><td data-val="4428" class="td-code">4428</td><td data-val="SONIA ALAMELAMA" class="td-name">SONIA ALAMELAMA</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="St Joseph" class="td-ville">St Joseph</td><td data-val="2204.9">2 205 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="2204.9" style="color:#bbb;font-size:11px">—</td><td data-val="8202.91" style="color:#888">8 203 €</td><td data-val="-73.12" style="color:#C0392B;font-weight:700">▼ 73.1 %</td><td data-val="0.58"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.6%;background:#117A65"></div></div><span class="pbar-pct">0.6%</span></td></tr>
+<tr><td data-val="3156" class="td-code">3156</td><td data-val="MME GALY" class="td-name">MME GALY</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Les 3 Ilets" class="td-ville">Les 3 Ilets</td><td data-val="2189.7">2 190 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="2189.7" style="color:#bbb;font-size:11px">—</td><td data-val="2281.1" style="color:#888">2 281 €</td><td data-val="-4.01" style="color:#C0392B;font-weight:700">▼ 4.0 %</td><td data-val="0.58"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.6%;background:#117A65"></div></div><span class="pbar-pct">0.6%</span></td></tr>
+<tr><td data-val="3211" class="td-code">3211</td><td data-val="PERLE DES ANTILLE - MME PIQUIONNE" class="td-name">PERLE DES ANTILLE - MME PIQUIONNE</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Le Diamant" class="td-ville">Le Diamant</td><td data-val="1985.38">1 985 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="1985.38" style="color:#bbb;font-size:11px">—</td><td data-val="3077.44" style="color:#888">3 077 €</td><td data-val="-35.49" style="color:#C0392B;font-weight:700">▼ 35.5 %</td><td data-val="0.52"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.5%;background:#117A65"></div></div><span class="pbar-pct">0.5%</span></td></tr>
+<tr><td data-val="5089" class="td-code">5089</td><td data-val="KARIBELLA" class="td-name">KARIBELLA</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Sainte Anne" class="td-ville">Sainte Anne</td><td data-val="1571.17">1 571 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="1571.17" style="color:#bbb;font-size:11px">—</td><td data-val="0.0" style="color:#888"><span style=color:#ccc>—</span></td><td data-val="9999.00" style="color:#aaa;font-weight:700">—</td><td data-val="0.41"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.4%;background:#117A65"></div></div><span class="pbar-pct">0.4%</span></td></tr>
+<tr><td data-val="2503" class="td-code">2503</td><td data-val="ISLAND BEACH - PIERRE ET VACANCES" class="td-name">ISLAND BEACH - PIERRE ET VACANCES</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Sainte Luce" class="td-ville">Sainte Luce</td><td data-val="1411.8899999999999">1 412 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="1411.8899999999999" style="color:#bbb;font-size:11px">—</td><td data-val="2343.08" style="color:#888">2 343 €</td><td data-val="-39.74" style="color:#C0392B;font-weight:700">▼ 39.7 %</td><td data-val="0.37"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.4%;background:#117A65"></div></div><span class="pbar-pct">0.4%</span></td></tr>
+<tr><td data-val="2779" class="td-code">2779</td><td data-val="IRENE MARS" class="td-name">IRENE MARS</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Fort De France" class="td-ville">Fort De France</td><td data-val="1109.28">1 109 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="1109.28" style="color:#bbb;font-size:11px">—</td><td data-val="0.0" style="color:#888"><span style=color:#ccc>—</span></td><td data-val="9999.00" style="color:#aaa;font-weight:700">—</td><td data-val="0.29"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.3%;background:#117A65"></div></div><span class="pbar-pct">0.3%</span></td></tr>
+<tr><td data-val="5072" class="td-code">5072</td><td data-val="VENUS CREATION" class="td-name">VENUS CREATION</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Les 3 Ilets" class="td-ville">Les 3 Ilets</td><td data-val="1100.05">1 100 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="1100.05" style="color:#bbb;font-size:11px">—</td><td data-val="0.0" style="color:#888"><span style=color:#ccc>—</span></td><td data-val="9999.00" style="color:#aaa;font-weight:700">—</td><td data-val="0.29"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.3%;background:#117A65"></div></div><span class="pbar-pct">0.3%</span></td></tr>
+<tr><td data-val="4877" class="td-code">4877</td><td data-val="BOUTIQUE COCO D'ILE" class="td-name">BOUTIQUE COCO D'ILE</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Sainte Luce" class="td-ville">Sainte Luce</td><td data-val="1081.33">1 081 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="1081.33" style="color:#bbb;font-size:11px">—</td><td data-val="0.0" style="color:#888"><span style=color:#ccc>—</span></td><td data-val="9999.00" style="color:#aaa;font-weight:700">—</td><td data-val="0.28"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.3%;background:#117A65"></div></div><span class="pbar-pct">0.3%</span></td></tr>
+<tr><td data-val="4591" class="td-code">4591</td><td data-val="JEAN YVON" class="td-name">JEAN YVON</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Fort De France" class="td-ville">Fort De France</td><td data-val="985.26">985 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="985.26" style="color:#bbb;font-size:11px">—</td><td data-val="14673.03" style="color:#888">14 673 €</td><td data-val="-93.29" style="color:#C0392B;font-weight:700">▼ 93.3 %</td><td data-val="0.26"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.3%;background:#117A65"></div></div><span class="pbar-pct">0.3%</span></td></tr>
+<tr><td data-val="2782" class="td-code">2782</td><td data-val="CARIB CURIOS CINELU" class="td-name">CARIB CURIOS CINELU</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Les 3 Ilets" class="td-ville">Les 3 Ilets</td><td data-val="952.94">953 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="952.94" style="color:#bbb;font-size:11px">—</td><td data-val="1254.63" style="color:#888">1 255 €</td><td data-val="-24.05" style="color:#C0392B;font-weight:700">▼ 24.0 %</td><td data-val="0.25"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.3%;background:#117A65"></div></div><span class="pbar-pct">0.3%</span></td></tr>
+<tr><td data-val="5071" class="td-code">5071</td><td data-val="RENAI'SENS DISTRIBUTION" class="td-name">RENAI'SENS DISTRIBUTION</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Sainte Luce" class="td-ville">Sainte Luce</td><td data-val="597.22">597 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="597.22" style="color:#bbb;font-size:11px">—</td><td data-val="0.0" style="color:#888"><span style=color:#ccc>—</span></td><td data-val="9999.00" style="color:#aaa;font-weight:700">—</td><td data-val="0.16"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.2%;background:#117A65"></div></div><span class="pbar-pct">0.2%</span></td></tr>
+<tr><td data-val="2907" class="td-code">2907</td><td data-val="MADRAS DESIGN" class="td-name">MADRAS DESIGN</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Le Marin" class="td-ville">Le Marin</td><td data-val="423.08">423 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="423.08" style="color:#bbb;font-size:11px">—</td><td data-val="790.77" style="color:#888">791 €</td><td data-val="-46.50" style="color:#C0392B;font-weight:700">▼ 46.5 %</td><td data-val="0.11"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.1%;background:#117A65"></div></div><span class="pbar-pct">0.1%</span></td></tr>
+<tr><td data-val="5115" class="td-code">5115</td><td data-val="AGLAE SARL" class="td-name">AGLAE SARL</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Sainte Luce" class="td-ville">Sainte Luce</td><td data-val="399.82">400 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="399.82" style="color:#bbb;font-size:11px">—</td><td data-val="0.0" style="color:#888"><span style=color:#ccc>—</span></td><td data-val="9999.00" style="color:#aaa;font-weight:700">—</td><td data-val="0.11"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.1%;background:#117A65"></div></div><span class="pbar-pct">0.1%</span></td></tr>
+<tr><td data-val="2398" class="td-code">2398</td><td data-val="COAST TO COAST" class="td-name">COAST TO COAST</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Les 3 Ilets" class="td-ville">Les 3 Ilets</td><td data-val="395.45">395 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="395.45" style="color:#bbb;font-size:11px">—</td><td data-val="0.0" style="color:#888"><span style=color:#ccc>—</span></td><td data-val="9999.00" style="color:#aaa;font-weight:700">—</td><td data-val="0.10"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.1%;background:#117A65"></div></div><span class="pbar-pct">0.1%</span></td></tr>
+<tr><td data-val="4080" class="td-code">4080</td><td data-val="MME MODESTINE" class="td-name">MME MODESTINE</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="La Trinite" class="td-ville">La Trinite</td><td data-val="336.96">337 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="336.96" style="color:#bbb;font-size:11px">—</td><td data-val="423.96" style="color:#888">424 €</td><td data-val="-20.52" style="color:#C0392B;font-weight:700">▼ 20.5 %</td><td data-val="0.09"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.1%;background:#117A65"></div></div><span class="pbar-pct">0.1%</span></td></tr>
+<tr><td data-val="5080" class="td-code">5080</td><td data-val="GUYON PINGET JOANNA" class="td-name">GUYON PINGET JOANNA</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Les Anses D'Arlet" class="td-ville">Les Anses D'Arlet</td><td data-val="30.0">30 €</td><td data-val="0" style="color:#ccc">—</td><td data-val="30.0" style="color:#bbb;font-size:11px">—</td><td data-val="0.0" style="color:#888"><span style=color:#ccc>—</span></td><td data-val="9999.00" style="color:#aaa;font-weight:700">—</td><td data-val="0.01"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.0%;background:#117A65"></div></div><span class="pbar-pct">0.0%</span></td></tr>
+<tr><td data-val="2520" class="td-code">2520</td><td data-val="SARL MADININA WEAR" class="td-name">SARL MADININA WEAR</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Fort De France" class="td-ville">Fort De France</td><td data-val="0.0"><span style=color:#ccc>—</span></td><td data-val="0" style="color:#ccc">—</td><td data-val="0.0" style="color:#bbb;font-size:11px">—</td><td data-val="5547.2" style="color:#888">5 547 €</td><td data-val="-100.00" style="color:#C0392B;font-weight:700">▼ 100.0 %</td><td data-val="0.00"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.0%;background:#117A65"></div></div><span class="pbar-pct">0.0%</span></td></tr>
+<tr><td data-val="4940" class="td-code">4940</td><td data-val="TI SOUVENIRS" class="td-name">TI SOUVENIRS</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Les 3 Ilets" class="td-ville">Les 3 Ilets</td><td data-val="0.0"><span style=color:#ccc>—</span></td><td data-val="0" style="color:#ccc">—</td><td data-val="0.0" style="color:#bbb;font-size:11px">—</td><td data-val="8203.75" style="color:#888">8 204 €</td><td data-val="-100.00" style="color:#C0392B;font-weight:700">▼ 100.0 %</td><td data-val="0.00"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.0%;background:#117A65"></div></div><span class="pbar-pct">0.0%</span></td></tr>
+<tr><td data-val="2370" class="td-code">2370</td><td data-val="FRANCINE MORAND" class="td-name">FRANCINE MORAND</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Fort De France" class="td-ville">Fort De France</td><td data-val="0.0"><span style=color:#ccc>—</span></td><td data-val="0" style="color:#ccc">—</td><td data-val="0.0" style="color:#bbb;font-size:11px">—</td><td data-val="1902.12" style="color:#888">1 902 €</td><td data-val="-100.00" style="color:#C0392B;font-weight:700">▼ 100.0 %</td><td data-val="0.00"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.0%;background:#117A65"></div></div><span class="pbar-pct">0.0%</span></td></tr>
+<tr><td data-val="3672" class="td-code">3672</td><td data-val="MME ALAMELAMA BRIGITTE" class="td-name">MME ALAMELAMA BRIGITTE</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Sainte Luce" class="td-ville">Sainte Luce</td><td data-val="0.0"><span style=color:#ccc>—</span></td><td data-val="0" style="color:#ccc">—</td><td data-val="0.0" style="color:#bbb;font-size:11px">—</td><td data-val="2735.14" style="color:#888">2 735 €</td><td data-val="-100.00" style="color:#C0392B;font-weight:700">▼ 100.0 %</td><td data-val="0.00"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.0%;background:#117A65"></div></div><span class="pbar-pct">0.0%</span></td></tr>
+<tr><td data-val="3463" class="td-code">3463</td><td data-val="MADRAS PLAGE" class="td-name">MADRAS PLAGE</td><td data-val="972" class="td-code" style="text-align:center">972</td><td data-val="Sainte Anne" class="td-ville">Sainte Anne</td><td data-val="0.0"><span style=color:#ccc>—</span></td><td data-val="0" style="color:#ccc">—</td><td data-val="0.0" style="color:#bbb;font-size:11px">—</td><td data-val="5428.29" style="color:#888">5 428 €</td><td data-val="-100.00" style="color:#C0392B;font-weight:700">▼ 100.0 %</td><td data-val="0.00"><div class="pbar-wrap"><div class="pbar-fill" style="width:0.0%;background:#117A65"></div></div><span class="pbar-pct">0.0%</span></td></tr>
+</tbody>
+      <tfoot><tr class="tf">
+        <td colspan="4" style="text-align:left">TOTAL</td>
+        <td>380 426 €</td>
+        <td>—</td>
+        <td>380 426 €</td>
+        <td>448 058 €</td>
+        <td style="color:#F1948A">
+          ▼ 15.1 %</td>
+        <td></td>
+      </tr></tfoot>
+    </table>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <strong>Importalux</strong> &nbsp;·&nbsp;
+  CA HT hors frais de port &nbsp;·&nbsp;
+  Avoirs exclus &nbsp;·&nbsp;
+  Généré le 25/06/2026 à 14:53
+</div>
+
+<script>
+// ── Graphique mensuel ──
+new Chart(document.getElementById('chartMensuel'),{
+  type:'bar',
+  data:{
+    labels:["Sep", "Oct", "Nov", "D\u00e9c", "Jan", "F\u00e9v", "Mar", "Avr", "Mai", "Jun", "Jul", "Ao\u00fb"],
+    datasets:[
+      {label:'BDC en cours',
+        data:[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        backgroundColor:'#E67E22CC',borderRadius:5,stack:'N'},
+      {label:'Facturé Saison 2025/2026',
+        data:[3365.46, 1878.95, 1238.0, 164508.29, 3988.71, 826.24, 290.0, 95265.55, 0.0, 1536.84, 107527.79, 0.0],
+        backgroundColor:'#117A65CC',borderRadius:5,stack:'N'},
+      {label:'Facturé Saison 2024/2025',
+        data:[777.11, 2098.33, 0.0, 173733.45, 5341.52, 60.0, 132786.48, 603.62, 0.0, 22535.26, 108598.7, 1523.12],
+        backgroundColor:'#95A5A655',borderColor:'#95A5A6',
+        borderWidth:1,borderRadius:5,stack:'N1'}
+    ]
+  },
+  options:{
+    responsive:true,
+    plugins:{
+      legend:{position:'bottom',labels:{font:{size:12},padding:16,usePointStyle:true}},
+      tooltip:{callbacks:{
+        label:c=>' '+c.dataset.label+' : '+
+          new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',
+            maximumFractionDigits:0}).format(c.parsed.y),
+        footer:items=>'Total : '+
+          new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',
+            maximumFractionDigits:0}).format(items.reduce((s,i)=>s+i.parsed.y,0))
+      }}
+    },
+    scales:{
+      x:{stacked:true,grid:{display:false},ticks:{font:{size:12}}},
+      y:{stacked:true,grid:{color:'#EAF0F7'},
+        ticks:{font:{size:12},callback:v=>
+          new Intl.NumberFormat('fr-FR',{notation:'compact',
+            maximumFractionDigits:0}).format(v)+' €'
+        }
+      }
+    }
+  }
+});
+
+// ── Tri tableau ──
+function sortTable(tableId, colIdx, type, thEl) {
+  var tbl   = document.getElementById(tableId);
+  var tbody = tbl.querySelector('tbody');
+  var rows  = Array.from(tbody.querySelectorAll('tr'));
+  var asc   = !thEl.classList.contains('asc');
+  tbl.querySelectorAll('th.th-sort').forEach(h => h.classList.remove('asc','desc'));
+  thEl.classList.add(asc ? 'asc' : 'desc');
+  rows.sort((a,b) => {
+    var va = a.cells[colIdx].dataset.val ?? a.cells[colIdx].innerText.trim();
+    var vb = b.cells[colIdx].dataset.val ?? b.cells[colIdx].innerText.trim();
+    if (type==='num') {
+      return asc ? parseFloat(va)||0 - (parseFloat(vb)||0)
+                 : parseFloat(vb)||0 - (parseFloat(va)||0);
+    }
+    return asc ? va.localeCompare(vb,'fr') : vb.localeCompare(va,'fr');
+  });
+  rows.forEach(r => tbody.appendChild(r));
+}
+</script>
+</body>
+</html>
